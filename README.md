@@ -9,19 +9,19 @@
 
 ## Requirements
 
-[name] satisfy the following requirements:
+[name] satisfies the following requirements:
 
 - Rides should be clustered based on ride distance and time, and anomalies/outliers identified;
-- Speed (distance/time) was not to be used, as analysts would like to understand long-distance rides or those with a long duration;
+- Speed (distance/time) was not to be used, as analysts would like to understand long-distance rides or those with long duration;
 - The analysis should be carried out on a daily schedule;
 - The data for inference should be consumed from the company’s data lake;
 - The results should be made available for consumption by other company systems;
-- The system’s results should contain information on the rides classification as well as a summary of relevant textual data;
+- The system’s results should contain information on the ride classification as well as a summary of relevant textual data;
 - Only anomalous rides need to have textual data summarized;
 
 ## Users Stories
 
-- **User story 1**: As an operations analyst or data scientist, I want to be given clear labels of rides that are anomalous when considering their ride times in minutes and ride distances in miles so that I can perform further analysis and modeling on the volume of anomalous rides. The criteria for what counts as an anomaly should be determined by an appropriate ML algorithm, which defines an anomaly with respect to the other rides for the same day;
+- **User story 1**: As an operations analyst or data scientist, I want to be given clear labels of rides that are anomalous when considering their ride times in minutes and ride distances in miles so that I can perform further analysis and modeling on the volume of anomalous rides. The criteria for what counts as an anomaly should be determined by an appropriate ML algorithm, which defines an anomaly concerning the other rides for the same day;
 - **User story 2**: As an operations analyst or data scientist, I want to be provided with a summary of relevant textual data so that I can do further analysis and modeling on the reasons for some rides being anomalous;
 - **User story 3**: As an internal application developer, I want all output data sent to a central location, preferably in the cloud, so that I can easily build dashboards and other applications with this data;
 - **User story 4**: As an operations analyst or data scientist, I would like to receive a report every morning by 09.00. This report should clearly show which rides were anomalous or “normal” as defined by the selected ML algorithm. This will enable me to update my analyses and provide an update to the logistics managers.
@@ -35,20 +35,41 @@ The following image illustrates the pipeline's workflow.
 ![Pipeline workflow](/img/pipeline_workflow.png)
 
 The pipeline is designed by Apache Airflow. Apache Airflow is a platform to programmatically author, schedule, and monitor workflows.
-The pipeline is composed by the following steps:
+The pipeline is composed of the following steps:
 
-- Data Extraction: for the sake of simplicity, we consider that the rides data (time, speed, traffic, news and weather) are collected in a local directory (_source_);
+- Data Extraction: for the sake of simplicity, we consider that the ride data (time, speed, traffic, news, and weather) are collected in a local directory (_source_);
 - Clustering:
 - Save Clustering Results: the clustering results are saved in a local directory (_cdata_):
 - Clustered Data Extraction: for the reports generation the clustered data are extracted from the directory (_cdata_):
 - Data Summarization: the data summarization is achieved using a Large Language Model (LLM). We deploy the LLM locally through Ollama.
 - Save Summarization Results: the generated reports are saved in a local directory (_reports_) in order to get them available.
 
+## Prerequisites for Windows Users
+
+Airflow is not compatible with Windows, so it is necessary to use WSL (Windows Subsystem for Linux).
+
+To install WSL, open PowerShell and execute the following command:
+
+```powershell
+    wsl --install
+    # Then, type exit.
+```
+
+Navigate to the directory where the repository was cloned using the ```cd``` command and launch WSL: ```wsl```.
+
+This will open the shell in the local (Windows) directory but mounted in Ubuntu.
+
+The commands in the rest of this README should be executed from this shell.
+
+If you have Visual Studio Code (VSCode), you can open this project by using the command ```code .```. This will launch VSCode on Windows, while the code will be executed in the Ubuntu environment.
+
 ## Deploying LLM Locally with Ollama
 
 [Ollama](https://ollama.com/) is a powerful tool enabling the local execution of large language models (LLMs). By leveraging local hardware, users can operate advanced AI models without relying on cloud-based services. </br>
 Ollama provides access to a variety of pre-optimized models, including Phi-3.5-mini. This state-of-the-art, lightweight model is trained on high-quality, factual data derived from synthetic sources and carefully curated public websites. </br>
 To install Ollama, download it from the official [website](https://ollama.com/download)
+
+For Windows users, it is essential to use the Linux installation (always within the WSL shell).
 
 Now, we can pull an LLM from the Ollama registry.
 
@@ -109,7 +130,7 @@ Start Airflow:
 The airflow standalone command initializes the database, creates a user, and starts all components. </br>
 Airflow's user interface is accessible at http://localhost:8080. The necessary credentials (username and password) can be found in the output of the preceding command.
 
-The DAG section show a lot of examples, if you want to remove them, change the _load_example_ in the _airflow/airflow.cfg_ file:
+The DAG section shows a lot of examples, if you want to remove them, change the _load_example_ in the _airflow/airflow.cfg_ file:
 
 ```
     # Whether to load the DAG examples that ship with Airflow. It's good to
@@ -155,13 +176,21 @@ Install the required packages:
     pip install ollama
 ```
 
+Create the data directory structure:
+```
+    mkdir data
+    mkdir data/source
+    mkdir data/cdata
+    mkdir data/reports
+```
+
 ### Dag Definition
 
 The DAG is defined in the _dags/pipeline_etml.py_ script and comprises two operators: _extract_cluster_save_ and _extract_summarize_.
 
 ![Pipeline implementation](/img/pipeline_implementation.png)extract_summarize
 
-The pipeline will be execute daily, so the _scedule_interval_ is set as _@daily_.
+The pipeline will be executed daily, so the _scedule_interval_ is set as _@daily_.
 
 ```
 with DAG(
@@ -206,7 +235,7 @@ Therefore, the data extraction process is straightforward:
     df = pd.read_json(os.path.join('./data/source', self.file_name))
 ```
 
-The Density-Based Spatial Clustering of Applications with Noise (DBSCAN) algorithm are exploited in order to detect the anomalies.
+The Density-Based Spatial Clustering of Applications with Noise (DBSCAN) algorithm is exploited in order to detect the anomalies.
 
 ```
     df_features = StandardScaler().fit_transform(df_features)
@@ -248,13 +277,13 @@ The following code snippet processes clustered data by generating prompts and su
 
 ```
 
-The prompt are generated as follows:
+The prompts are generated as follows:
 
 ```
     def format_prompt(self, news: str, weather: str, traffic: str) -> str:
         prompt = dedent(f'''
         <|system|>
-        You are an helpful assistant.<|end|>
+        You are a helpful assistant.<|end|>
         <|user|>
         The following information describes conditions relevant to
         taxi journeys through a single day in Glasgow, Scotland.
@@ -306,7 +335,7 @@ Access to the pipeline by clicking on ETML.
 
 Initiate the pipeline by clicking the "Start" button located in the top right corner.
 
-An example of generated report:
+An example of a generated report:
 
 ```
     {
