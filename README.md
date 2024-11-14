@@ -99,6 +99,11 @@ Following this, we can initiate the model and provide it with a prompt.
 ## Install and Configure Airflow
 
 It is highly recommended to establish a conda environment and install required packages within this isolated environment. </br>
+```
+    conda create -n LLM_APP python=3.10
+    conda activate LLM_APP
+```
+
 Install Airflow by executing the following commands from the repository's root directory:
 
 ```
