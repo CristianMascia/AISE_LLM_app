@@ -69,3 +69,4 @@ airflow/logs/dag_id=main/run_id=manual__2024-11-14T09:26:36.478611+00:00/task_id
 airflow/logs/dag_id=main/run_id=scheduled__2024-11-13T00:00:00+00:00/task_id=extract_cluster_save/attempt=1.log
 airflow/logs/dag_id=main/run_id=scheduled__2024-11-13T00:00:00+00:00/task_id=extract_summarize/attempt=1.log
 airflow/logs/scheduler/2024-11-14/pipeline_main.py.log
+backup/
